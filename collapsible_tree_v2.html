@@ -28,12 +28,20 @@
   var diagonal = d3.svg.diagonal()
 	.projection(function(d) { return [d.y, d.x]; });
 
-  var vis = d3.select("#graph").append("svg:svg")
+  var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
+  
+  var svg = d3.select("#graph").append("svg:svg")
 	  .attr("width", w + m[1] + m[3]+ 500)
 	  .attr("height", h + m[0] + m[2] + 500)
-	  .append("svg:g")
+    .call(zoomListener);
+    
+  var vis = svg.append("svg:g")
 	  .attr("transform", "translate("+ parseInt(m[3] - 640) + "," + m[0] + ")");
-
+    
+  function zoom() {
+    vis.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+  }
+    
 
   var json = {
    "name": "Contamination Produit",
