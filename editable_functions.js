@@ -20,14 +20,14 @@ function make_editable(d, field)
         xy.y -= p_xy.y;
 
         var el = d3.select(this);
-
         var p_el = d3.select(p);
         var frm = p_el.append("foreignObject");
         
         var inp = frm
-            .attr("x", function(d) { return d.children || d._children ? xy.y + 10 : xy.y - 10; })
-            .attr("y", xy.y - 12)
+            .attr("y", function(d) { return d.children || d._children ? xy.x - 10 : xy.x + 10; })
+            .attr("x", xy.x - 12)
             .attr("width", 300)
+            .attr("text-anchor", function(d) { return "end"; })
             .attr("height", 25)
             .append("xhtml:form")
                     .append("input")
@@ -115,8 +115,8 @@ function make_editable_path(d, field)
         console.log("Pointeur souris",souris_y);
 
         var inp = frm
-            .attr("x", souris_x -35)
-            .attr("y", souris_y -38)
+            .attr("x", souris_x - 35)
+            .attr("y", souris_y - 38)
             .attr("width", 10)
             .attr("height", 25)
             .append("xhtml:form")
