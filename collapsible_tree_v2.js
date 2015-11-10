@@ -1,21 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
-  
-  <!-- D3js -->
-  <script src="d3.v3.js" charset="utf-8"></script>
-
-  <!-- External js script and CSS -->
-  <script type="text/javascript" src="editable_functions.js"></script>
-  <link type="text/css" rel="stylesheet" href="style_tree_V2.css"/>
-
-</head>
-<body>
-  <div id="graph"></div>
-
-  <script type="text/javascript">
-
   var m = [20, 120, 20, 20],
   w = 1280 - m[1] - m[3],
   h = 800 - m[0] - m[2],
@@ -282,7 +264,3 @@ function toggle(d) {
     d._children = null;
   }
 }
-
-</script>
-</body>
-</html>
