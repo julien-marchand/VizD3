@@ -26,17 +26,9 @@ function make_editable(d, field)
           .attr("height", 25)
           .append("xhtml:form")
               .append("input")
-                  .attr("value", function() {
-                      // nasty spot to place this call, but here we are sure that the <input> tag is available
-                      // and is handily pointed at by 'this':
-                      this.focus();
-                      return d.name;
-                  })
+                  .attr("value", function() { this.focus(); return d.name; })
                   .attr("style", "width: 294px;")
-                  // make the form go away when you jump out (form looses focus) or hit ENTER:
                   .on("blur", function() {
-                     // console.log("blur", this, arguments);
-
                       var txt = inp.node().value;
                       
                       d.name = txt;
@@ -99,7 +91,6 @@ function make_editable_path(d, field) {
         .append("xhtml:form")
             .append("input")
                 .attr("value", function() {
-                    // nasty spot to place this call, but here we are sure that the <input> tag is available
                     // and is handily pointed at by 'this':
                     this.focus();
                     console.log(d);

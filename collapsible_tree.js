@@ -1,4 +1,4 @@
-var jsonCause = {
+var jsonConsequence = {
   "name": "",
   "children": [
       {
@@ -22,7 +22,7 @@ var jsonCause = {
   ]
 }
 
-var jsonConseqence = {
+var jsonCause = {
   "name": "Contamination Produit",
   "children": [
       {
@@ -128,15 +128,15 @@ root.y0 = w / 2;
 update(root, type = "cause", root);
 
 
-root2 = jsonConseqence;
+root2 = jsonConsequence;
 root2.x0 = h / 2;
 root2.y0 = w / 2;
 update(root2, type = "consequence", root2);
 
 // });
 
-var tooltip = d3.select("body").append("div") 
-  .attr("class", "tooltip")      
+var tooltip = d3.select("body").append("div")
+  .attr("class", "tooltip")
   .style("opacity", 0);
 
 function update(source, type, root) {
@@ -151,6 +151,7 @@ function update(source, type, root) {
     d.x = d.x - nodes[0].x + root.x0;
     d.y = w / 2 + 200 * d.depth * (type == "cause" ? -1 : 1);
   });
+  
 
   // Update the nodes
   var node = vis.selectAll("g.node." + type)
@@ -160,27 +161,29 @@ function update(source, type, root) {
   var nodeEnter = node.enter().append("svg:g")
     .attr("class", "node " + type)
     .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
-    .on("click", function(d) { toggle(d); update(d, type, root); });
+    .on("click", function(d) { if(d == root) expandAll(d); else toggle(d); update(d, type, root); });
   
-  nodeEnter.append("svg:circle")
-    .attr("r", 50)
-    .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+  nodeEnter.append("svg:polygon")
+    .attr("points", function(d) { return d != root ? drawShapePoints("circle") : (type == "cause" ? drawShapePoints("semi-circle left") : drawShapePoints("semi-circle right"))})
+    .attr("stroke", "lightsteelblue")
+    .attr("stroke-width", 2)
+    .attr("fill", "white");
 
   nodeEnter.append("svg:text")
-    // Question : est ce que tu as un enfant pour le placement de ton texte
     .attr("x", function(d) { return (d.children || d._children) ? 0 : 12 * (type == "cause" ? -1 : 1); })
     .attr("y", function(d) { return 16 * (d.children || d._children ? 1 : 0); })
     .attr("dy", ".35em")
     .attr("text-anchor", function(d) { return (d.children || d._children) ? "middle" : (type == "cause" ? "end" : "start"); })
     .text(function(d) { return d.name; })
     .style('fill',  'black' )
-    .style("fill-opacity", 1e-6)  
+    .style("fill-opacity", 1e-6)
     .call(make_editable, "nodeEnter");
 
 
-  nodeEnter.select("circle")
-    .attr("r", 9)
-    .style("fill","lightsteelblue")
+  nodeEnter.select("polygon")
+    .attr("points", function(d) { return d != root ? drawShapePoints("circle") : (type == "cause" ? drawShapePoints("semi-circle left") : drawShapePoints("semi-circle right"))})
+    .attr("stroke", "lightsteelblue")
+    .attr("fill", "white")
     .style("fill-opacity",0.8 );
 
   // Transition nodes to their new position.
@@ -188,9 +191,11 @@ function update(source, type, root) {
     .duration(duration)
     .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
 
-  nodeUpdate.select("circle")
-    .attr("r", 9)
-    .style("fill", function(d) { return d._children ? "green" : "white"; })
+  nodeUpdate.select("polygon")
+    .attr("points", function(d) { return d != root ? drawShapePoints("circle") : (type == "cause" ? drawShapePoints("semi-circle left") : drawShapePoints("semi-circle right"))})
+    .attr("stroke", "lightsteelblue")
+    .attr("stroke-width", 2 )
+    .style("fill", function(d) { return d._children ? "lightsteelblue" : "white"; })
     .style("fill-opacity",1 );
 
   nodeUpdate.select("text")
@@ -202,8 +207,8 @@ function update(source, type, root) {
     .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
     .remove();
 
-  nodeExit.select("circle")
-    .attr("r", 1e-6);
+  nodeExit.select("polygon")
+    .attr("points", "0,0");
 
   nodeExit.select("text")
     .style("fill-opacity", 1e-6);
@@ -260,14 +265,11 @@ function update(source, type, root) {
   })
   .remove();
 
-  console.log("x0: " + nodes[0].x0, "y0: " + nodes[0].y0)
   // Stash the old positions for transition.
   nodes.forEach(function(d) {
     d.x0 = d.x;
     d.y0 = d.y;
   });
-  
-  console.log("x0: " + nodes[0].x0, "y0: " + nodes[0].y0)
 }
 
 /*
@@ -278,6 +280,29 @@ if (d.children) {
 }
 }
 */
+
+function expandAll(d) {
+  if(d._children) {
+    expand(d);
+  } else {
+    d.children.forEach(group);
+    group(d);
+  }
+}
+
+function expand(d) {
+  if(d._children) {
+    d.children = d._children;
+    d._children = null
+  }
+}
+
+function group(d) {
+  if(d.children) {
+    d._children = d.children;
+    d.children = null;
+  }
+}
 
 // Toggle children.
 function toggle(d) {
@@ -292,4 +317,19 @@ function toggle(d) {
 
 function zoom() {
   vis.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+}
+
+function drawShapePoints(type) {
+  var left = "-5,8.7 -7.1,7.1 -8.7,5 -10,0 -8.7,-5 -7.1,-7.1 -5,-8.7",
+      right = "5,-8.7 7.1,-7.1 8.7,-5 10,0 8.7,5 7.1,7.1 5,8.7"
+  switch(type) {
+    case "semi-circle left":
+        return "0,10 " + left + " 0,-10";
+        break;
+    case "semi-circle right":
+        return "0,10 0,-10 " + right;
+        break;
+    default:
+        return "0,10 " + left + " 0,-10 " + right;
+  }
 }
