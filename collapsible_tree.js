@@ -2,21 +2,21 @@ var jsonConsequence = {
   "name": "",
   "children": [
       {
-          "name": "Cause 1",
+          "name": "Consequence 1",
           "proba": 0.2,
           "children": [
               {
-                  "name": "Sur-cause 1",
+                  "name": "Sur-consequence 1",
                   "proba": 0.5
               },
               {
-                  "name": "Sur-cause 2",
+                  "name": "Sur-consequence 2",
                   "proba": 0.5
               }
           ]
       },
       {
-          "name": "Cause 2",
+          "name": "Consequence 2",
           "proba": 0.8
       }
   ]
@@ -28,51 +28,51 @@ var jsonCause = {
       {
           "name": "Produit Contaminé",
           "description": "Proba : 0.6",
-          "proba": 0.6,
+          "op": "*",
           "children": [
               {
                   "name": "Matières première",
                   "description": "Proba : 0.8",
-                  "proba": 0.18,
+                  "op": "+",
                   "children": [
                       {
                           "name": "Manipulation personnel/ Sous-traitant",
                           "description": "Proba : 0.5 ",
-                          "proba": 0.18
+                          "proba": 0.5
                       }
                   ]
               },
               {
                   "name": "Stockage/transport",
                   "description": "Proba : 0.8",
-                  "proba": 0.18,
+                  "op": "*",
                   "children": [
                       {
                           "name": "Non respect de la procédure de la production",
                           "description": "Proba : 0.8",
-                          "proba": 0.1
+                          "proba": 0.6
                       },
                       {
                           "name": "Contamination sur le site/stockage",
                           "description": "Proba : 0.8",
-                          "proba": 0.072
+                          "proba": 0.4
                       }
                   ]
               },
               {
                   "name": "Production",
                   "description": "Proba : 0.8",
-                  "proba": 0.24,
+                  "op": "*",
                   "children": [
                       {
                           "name": "Défaillance système de production",
                           "description": "Proba : 0.8",
-                          "proba": 0.168
+                          "proba": 0.9
                       },
                       {
                           "name": "Contamination emballages",
                           "description": "Proba : 0.8",
-                          "proba": 0.072
+                          "proba": 0.5
                       }
                   ]
               }
@@ -81,7 +81,7 @@ var jsonCause = {
       {
           "name": "Défaillance du Contrôle",
           "description": "proba : 0.7",
-          "proba": 0.4,
+          "op": "+",
           "children": [
               {
                   "name": "Non respectde la procédure de production",
@@ -179,7 +179,6 @@ function update(source, type, root) {
     .style("fill-opacity", 1e-6)
     .call(make_editable, "nodeEnter");
 
-
   nodeEnter.select("polygon")
     .attr("points", function(d) { return d != root ? drawShapePoints("circle") : (type == "cause" ? drawShapePoints("semi-circle left") : drawShapePoints("semi-circle right"))})
     .attr("stroke", "lightsteelblue")
@@ -230,7 +229,7 @@ function update(source, type, root) {
       return diagonal({source: o, target: o});
     })
     .style("stroke-width",function(d) {
-            return d.target.proba*20 ;
+            return (type == "cause" ? computeProbability(d.target) : d.target.proba)*20 ;
           })
     .call(make_editable_path, "link")
     .transition()
@@ -241,7 +240,7 @@ function update(source, type, root) {
     tooltip.transition()
       .duration(100)
       .style("opacity", .9);
-    tooltip.html("<center> Probabilité " +d.target.proba + "</center>")
+    tooltip.html("<center> Probabilité " + (type == "cause" ? computeProbability(d.target) : d.target.proba) + "</center>")
       .style("left", (d3.event.pageX ) + "px")
       .style("top", (d3.event.pageY + 10) + "px");
   })
@@ -270,6 +269,28 @@ function update(source, type, root) {
     d.x0 = d.x;
     d.y0 = d.y;
   });
+}
+
+function computeProbability(d) {
+  if(d.proba)
+    d.computed_proba = d.proba;
+  else if(d.children || d._children) {
+    var allChildren = d.children ? d.children : d._children
+    var proba = 1;
+    if(d.op == "+") {
+      for(var i = 0; i < allChildren.length; i++) {
+        proba *= computeProbability(allChildren[i])
+      }
+    } else if (d.op == "*") {
+      for(var i = 0; i <  allChildren.length; i++) {
+        proba *= 1 - computeProbability(allChildren[i])
+      }
+      proba = 1 - proba
+    }
+    d.computed_proba = proba;
+  } else
+    d.computed_proba = 1;
+  return d.computed_proba
 }
 
 /*
