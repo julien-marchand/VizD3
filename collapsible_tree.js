@@ -28,12 +28,12 @@ var jsonCause = {
       {
           "name": "Produit Contaminé",
           "description": "Proba : 0.6",
-          "op": "*",
+          "op": "OR",
           "children": [
               {
                   "name": "Matières première",
                   "description": "Proba : 0.8",
-                  "op": "+",
+                  "op": "AND",
                   "children": [
                       {
                           "name": "Manipulation personnel/ Sous-traitant",
@@ -45,7 +45,7 @@ var jsonCause = {
               {
                   "name": "Stockage/transport",
                   "description": "Proba : 0.8",
-                  "op": "*",
+                  "op": "OR",
                   "children": [
                       {
                           "name": "Non respect de la procédure de la production",
@@ -62,7 +62,7 @@ var jsonCause = {
               {
                   "name": "Production",
                   "description": "Proba : 0.8",
-                  "op": "*",
+                  "op": "AND",
                   "children": [
                       {
                           "name": "Défaillance système de production",
@@ -81,7 +81,7 @@ var jsonCause = {
       {
           "name": "Défaillance du Contrôle",
           "description": "proba : 0.7",
-          "op": "+",
+          "op": "OR",
           "children": [
               {
                   "name": "Non respectde la procédure de production",
@@ -101,8 +101,7 @@ var jsonCause = {
 var m = [20, 120, 20, 20],
 w = window.screen.availWidth - m[1] - m[3],
 h = window.screen.availHeight - m[0] - m[2],
-i = 0,
-root;
+i = 0;
 
 var tree = d3.layout.tree()
   .size([h, w]);
@@ -150,6 +149,7 @@ function update(source, type, root) {
   nodes.forEach(function(d) {
     d.x = d.x - nodes[0].x + root.x0;
     d.y = w / 2 + 200 * d.depth * (type == "cause" ? -1 : 1);
+    d.computed_proba = computeProbability(d);
   });
   
 
@@ -160,14 +160,30 @@ function update(source, type, root) {
   // Enter any new nodes at the parent's previous position.
   var nodeEnter = node.enter().append("svg:g")
     .attr("class", "node " + type)
-    .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
-    .on("click", function(d) { if(d == root) expandAll(d); else toggle(d); update(d, type, root); });
+    .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; });
   
   nodeEnter.append("svg:polygon")
     .attr("points", function(d) { return d != root ? drawShapePoints("circle") : (type == "cause" ? drawShapePoints("semi-circle left") : drawShapePoints("semi-circle right"))})
     .attr("stroke", "lightsteelblue")
     .attr("stroke-width", 2)
-    .attr("fill", "white");
+    .attr("fill", "white")
+    .on("click", function(d) { if(d == root) expandAll(d); else toggle(d); update(d, type, root); })
+    .on("mouseover", function(d) {
+      tooltip.transition()
+        .duration(100)
+        .style("opacity", .9);
+      tooltip.html("<table> \
+        <tr><td>Name</td><td>" + d.name + "</td></tr> \
+        <tr><td>Description</td><td>" + nvl(d.description, "") + "</td></tr> \
+        <tr><td>Risk interaction</td><td>" + nvl(d.op, "") + "</td></tr> \
+        </table>")
+        .style("left", (d3.event.pageX ) + "px")
+        .style("top", (d3.event.pageY + 10) + "px");})
+    .on("mouseout", function(d) {
+      tooltip.transition()
+        .duration(500)
+        .style("opacity", 0);
+    });
 
   nodeEnter.append("svg:text")
     .attr("x", function(d) { return (d.children || d._children) ? 0 : 12 * (type == "cause" ? -1 : 1); })
@@ -221,26 +237,22 @@ function update(source, type, root) {
   //  Enter any new links at the parent's previous position.
   var linkPath = link.enter().insert("svg:path", "g")
     .attr("class", "link " + type)
-    .attr("id", function(d){
-                     return "path_" + ++i  ;
-                   })
+    .attr("id", function(d){return "path_" + ++i;})
     .attr("d", function(d) {
       var o = {x: source.x0, y: source.y0};
       return diagonal({source: o, target: o});
     })
-    .style("stroke-width",function(d) {
-            return (type == "cause" ? computeProbability(d.target) : d.target.proba)*20 ;
-          })
-    .call(make_editable_path, "link")
+    .style("stroke-width",function(d) {return d.target.computed_proba*20;})
+    .call(make_editable_path, nodes)
     .transition()
     .duration(duration)
     .attr("d", diagonal);
-
+    
   link.on("mouseover", function(d) {
     tooltip.transition()
       .duration(100)
       .style("opacity", .9);
-    tooltip.html("<center> Probabilité " + (type == "cause" ? computeProbability(d.target) : d.target.proba) + "</center>")
+    tooltip.html("<center> Probabilité " + d.target.computed_proba + "</center>")
       .style("left", (d3.event.pageX ) + "px")
       .style("top", (d3.event.pageY + 10) + "px");
   })
@@ -277,11 +289,11 @@ function computeProbability(d) {
   else if(d.children || d._children) {
     var allChildren = d.children ? d.children : d._children
     var proba = 1;
-    if(d.op == "+") {
+    if(d.op == "AND") {
       for(var i = 0; i < allChildren.length; i++) {
         proba *= computeProbability(allChildren[i])
       }
-    } else if (d.op == "*") {
+    } else if (d.op == "OR") {
       for(var i = 0; i <  allChildren.length; i++) {
         proba *= 1 - computeProbability(allChildren[i])
       }
@@ -353,4 +365,10 @@ function drawShapePoints(type) {
     default:
         return "0,10 " + left + " 0,-10 " + right;
   }
+}
+
+function nvl(value1, value2) {
+  if (value1 == null)
+    return value2;
+  return value1;
 }

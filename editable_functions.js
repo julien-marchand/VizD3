@@ -1,5 +1,4 @@
-function make_editable(d, field)
-{
+function make_editable(d) {
   this.on("mouseover", function() {
       d3.select(this).style("fill", "red");
     })
@@ -16,6 +15,8 @@ function make_editable(d, field)
 
       var el = d3.select(this);
       var p_el = d3.select(p);
+      
+      d3.selectAll("foreignObject").remove();
       var frm = p_el.append("foreignObject");
       
       var inp = frm
@@ -38,9 +39,7 @@ function make_editable(d, field)
                       p_el.select("foreignObject").remove();
                   })
                   .on("keypress", function() {
-                      // IE fix
-                      if (!d3.event)
-                          d3.event = window.event;
+                      if (!d3.event) d3.event = window.event; // IE fix
 
                       var e = d3.event;
                       // A chaque event keypress (d3.event on recup le dernier élément réalisé)
@@ -60,13 +59,13 @@ function make_editable(d, field)
                           
                           // odd. Should work in Safari, but the debugger crashes on this instead.
                           // Anyway, it SHOULD be here and it doesn't hurt otherwise.
-                          p_el.select("foreignObject").remove();
+                          //p_el.select("foreignObject").remove();
                       }
                   });
     });
 }
 
-function make_editable_path(d, field) {
+function make_editable_path(d, nodes) {
   this.on("click", function(d) {
     var p = this.parentNode;
     var xy = this.getBBox();
@@ -77,6 +76,8 @@ function make_editable_path(d, field) {
 
     var el = d3.select(this);
     var p_el = d3.select(p);
+    
+    d3.selectAll("foreignObject").remove();
     var frm = p_el.append("foreignObject");
 
     souris_x=d3.mouse(this)[0];
@@ -93,32 +94,22 @@ function make_editable_path(d, field) {
                 .attr("value", function() {
                     // and is handily pointed at by 'this':
                     this.focus();
-                    console.log(d);
-                    return  parseFloat(d.target.proba);
+                    return  parseFloat(d.target.computed_proba);
                 })
                 .attr("style", "width:  94px;")
                 // make the form go away when you jump out (form looses focus) or hit ENTER:
                 .on("blur", function() {
-                   // console.log("blur", this, arguments);
-
-                    var txt = inp.node().value;
+                    d.target.proba = parseFloat(inp.node().value);
                     
-                    d.target.proba = parseFloat(txt);
-                    console.log(d.target.proba )
-                    el.text(function(d) { return d.target.proba; });
-                    
+                    //console.log("blur")
                     // Note to self: frm.remove() will remove the entire <g> group! Remember the D3 selection logic!
-                    p_el.select("foreignObject").remove();
+                    d3.selectAll("foreignObject").remove();
                 })
                 .on("keypress", function() {
-                    //console.log("keypress", this, arguments);
-                    
-                    // IE fix
-                    if (!d3.event)
-                        d3.event = window.event;
+                    if (!d3.event) d3.event = window.event; // IE fix
 
                     var e = d3.event;
-                    console.log(e);
+
                     // A chaque event keypress (d3.event on recup le dernier élément réalisé)
                     // il y a un keycode associé et le 13 c'est Entrer
                     if (e.keyCode == 13)
@@ -129,16 +120,19 @@ function make_editable_path(d, field) {
                           e.stopPropagation();
                         e.preventDefault();
 
-                        var txt = inp.node().value;
-                        d.target.proba = parseFloat(txt);
+                        d.target.proba = parseFloat(inp.node().value);
                   
-                        d3.selectAll("path.link")
-                           .style("stroke-width",function(d) {
-                            return d.target.proba*20 ;
-                                 });
                         // odd. Should work in Safari, but the debugger crashes on this instead.
                         // Anyway, it SHOULD be here and it doesn't hurt otherwise.
-                        p_el.select("foreignObject").remove();
+                        
+                        nodes.forEach(function(d_node) {
+                          d_node.computed_proba = computeProbability(d_node);
+                        })
+                        
+                        d3.selectAll("path.link")
+                           .style("stroke-width",function(d) {console.log(d.target.computed_proba);
+                            return d.target.computed_proba*20 ;
+                        });
                     }
                 });
   });
