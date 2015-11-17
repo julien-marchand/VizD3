@@ -170,13 +170,13 @@ function update(source, type, root) {
     .on("click", function(d) { if(d == root) expandAll(d); else toggle(d); update(d, type, root); })
     .on("mouseover", function(d) {
       tooltip.transition()
-        .duration(100)
+        .duration(200)
         .style("opacity", .9);
       tooltip.html("<table> \
         <tr><td>Name</td><td>" + d.name + "</td></tr> \
-        <tr><td>Description</td><td>" + nvl(d.description, "") + "</td></tr> \
-        <tr><td>Risk interaction</td><td>" + nvl(d.op, "") + "</td></tr> \
-        </table>")
+        <tr><td>Description</td><td>" + nvl(d.description, "") + "</td></tr>"
+        + ((type == "cause" && (d.children || d._children)) ? ("<tr><td>Risk interaction</td><td>" + nvl(d.op, "") + "</td></tr>") : "")
+        + "</table>")
         .style("left", (d3.event.pageX ) + "px")
         .style("top", (d3.event.pageY + 10) + "px");})
     .on("mouseout", function(d) {
@@ -193,7 +193,7 @@ function update(source, type, root) {
     .text(function(d) { return d.name; })
     .style('fill',  'black' )
     .style("fill-opacity", 1e-6)
-    .call(make_editable, "nodeEnter");
+    .call(make_editable);
 
   nodeEnter.select("polygon")
     .attr("points", function(d) { return d != root ? drawShapePoints("circle") : (type == "cause" ? drawShapePoints("semi-circle left") : drawShapePoints("semi-circle right"))})
@@ -250,9 +250,9 @@ function update(source, type, root) {
     
   link.on("mouseover", function(d) {
     tooltip.transition()
-      .duration(100)
+      .duration(200)
       .style("opacity", .9);
-    tooltip.html("<center> Probabilité " + d.target.computed_proba + "</center>")
+    tooltip.html("Risk: " + Math.round(d.target.computed_proba*10000)/100 + " %")
       .style("left", (d3.event.pageX ) + "px")
       .style("top", (d3.event.pageY + 10) + "px");
   })
@@ -316,17 +316,24 @@ if (d.children) {
 
 function expandAll(d) {
   if(d._children) {
+    console.log("Expand");
     expand(d);
   } else {
-    d.children.forEach(group);
-    group(d);
+    console.log("Group all");
+    groupAll(d);
   }
+}
+
+function groupAll(d) {
+  if(d.children) d.children.forEach(groupAll);
+  if(d._children) d._children.forEach(groupAll);
+  group(d);
 }
 
 function expand(d) {
   if(d._children) {
     d.children = d._children;
-    d._children = null
+    d._children = null;
   }
 }
 
@@ -337,15 +344,9 @@ function group(d) {
   }
 }
 
-// Toggle children.
 function toggle(d) {
-  if (d.children) {
-    d._children = d.children;
-    d.children = null;
-  } else {
-    d.children = d._children;
-    d._children = null;
-  }
+  if (d.children) group(d);
+  else expand(d);
 }
 
 function zoom() {
