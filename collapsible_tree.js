@@ -117,8 +117,6 @@ var svg = d3.select("#graph").append("svg:svg")
   .call(zoomListener);
   
 var vis = svg.append("svg:g")
-  // .attr("transform", "translate("+ parseInt(m[3] - 640) + "," + m[0] + ")");
-  
 
 // d3.json(json, function(json) {
 root = jsonCause;
@@ -193,7 +191,7 @@ function update(source, type, root) {
     .text(function(d) { return d.name; })
     .style('fill',  'black' )
     .style("fill-opacity", 1e-6)
-    .call(make_editable);
+    .call(make_editable, nodes);
 
   nodeEnter.select("polygon")
     .attr("points", function(d) { return d != root ? drawShapePoints("circle") : (type == "cause" ? drawShapePoints("semi-circle left") : drawShapePoints("semi-circle right"))})
@@ -307,10 +305,10 @@ function computeProbability(d) {
 
 /*
 function toggleAll(d) {
-if (d.children) {
-  d.children.forEach(toggleAll);
-  toggle(d);
-}
+  if (d.children) {
+    d.children.forEach(toggleAll);
+    toggle(d);
+  }
 }
 */
 
