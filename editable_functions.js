@@ -1,4 +1,4 @@
-function make_editable(d, nodes) {
+function make_editable(d, nodes, type) {
   this.on("click", function(d) {
       d3.selectAll("foreignObject").remove()
       
@@ -6,40 +6,52 @@ function make_editable(d, nodes) {
       var p = d3.select(this.parentNode);
       
       var inp = p.append("foreignObject")
-          .attr("x", 0)
-          .attr("y", 0)
+          .attr("x", -120)
+          .attr("y", -60)
           .attr("width", 300)
-          .attr("text-anchor", function(d) { return "end"; })
-          .attr("height", 25)
-          .attr("fill-opacity", 1)
-          .attr("fill", "white")
           .append("xhtml:form");
           
-      inp.html('<table style="z-index:2;background:rgb(255, 230, 0);">\
-                <tr><td>Name:</td><td><input id="iName" type="text" value="' + d.name + '"></td></tr>\
-                <tr><td>Description:</td><td><input id="iDescription" type="text" value="' + nvl(d.description, "")+ '"></td></tr>'
-                + ((d.children || d._children) ? '<tr><td>Risk interaction</td><td><input id="opAnd" type="radio" name="op" value="AND" ' + (d.op == "AND" ? "checked" : "") + '><label for="opAnd">AND</label><input id="opOr" type="radio" name="op" value="OR" ' + (d.op == "OR" ? "checked" : "") + '><label for="opOr">OR</label></td></tr>' : '')
-                + '<tr><td><button id="saveButton" type="button">Save</button></td><td><button id="cancelButton" type="button">Cancel</button>\
-                </table>');
-                
+      if(type == "cause")
+        inp.html('<table style="padding:5px;z-index:2;background:rgb(255, 230, 0);">'
+                  + trtd('Name', '<input id="iName" type="text" value="' + d.name + '">')
+                  + trtd('Description', '<input id="iDescription" type="text" value="' + nvl(d.description, "")+ '">')
+                  + ((d.children || d._children) ? trtd('Risk interaction', '<input id="opAnd" type="radio" name="op" value="AND" ' + (d.op == "AND" ? "checked" : "") + '><label for="opAnd">AND</label><input id="opOr" type="radio" name="op" value="OR" ' + (d.op == "OR" ? "checked" : "") + '><label for="opOr">OR</label>') : '')
+                  + trtd('<input id="riskReductionName1" value="' + nvl(d.riskReductionName1, "Risk reduction 1") + '" type="text">', '<input id="riskReduction1" value="' + d.riskReduction1 + '" type="number">')
+                  + trtd('<input id="riskReductionName2" value="' + nvl(d.riskReductionName2, "Risk reduction 2") + '" type="text">', '<input id="riskReduction2" value="' + d.riskReduction2 + '" type="number">')
+                  + trtd('<input id="riskReductionName3" value="' + nvl(d.riskReductionName3, "Risk reduction 3") + '" type="text">', '<input id="riskReduction3" value="' + d.riskReduction3 + '" type="number">')
+                  + trtd('<input id="riskReductionName4" value="' + nvl(d.riskReductionName4, "Risk reduction 4") + '" type="text">', '<input id="riskReduction4" value="' + d.riskReduction4 + '" type="number">')
+                  + '<tr><td style="text-align: center"><button id="saveButton" class="btn" type="button">Save</button></td><td style="text-align: center"><button id="cancelButton" class="btn" type="button">Cancel</button></td></tr>'
+                  + '</table>');
+      else {
+        inp.html('<table style="z-index:2;background:rgb(255, 230, 0);">'
+                  + trtd('Name', '<input id="iName" type="text" value="' + d.name + '">')
+                  + trtd('Description', '<input id="iDescription" type="text" value="' + nvl(d.description, "")+ '">')
+                  + '<tr><td style="text-align: center"><button id="saveButton" class="btn" type="button">Save</button></td><td style="text-align: center"><button id="cancelButton" class="btn" type="button">Cancel</button></td></tr>'
+                  + '</table>');
+      }
+                  
       d3.select(cancelButton)
         .on("click", function() {d3.select("foreignObject").remove()});
         
       d3.select(saveButton)
         .on("click", function() {
-          if(newName = d3.select("#iName")[0][0].value) 
+          var formObject = d3.select("foreignObject>form");
+          if(newName = formObject.select("#iName").node().value) 
             d.name = newName;
           el.text(function(d) { return d.name; });
-          d.description = d3.select("#iDescription")[0][0].value;
-          d.op = d3.select("#opAnd")[0][0].checked ? "AND" : "OR";
-          
+          d.description = formObject.select("#iDescription").node().value;
+          d.op = formObject.select("#opAnd").node().checked ? "AND" : "OR";
+          d.riskReduction1 = formObject.select("#riskReduction1").node().value;
+          d.riskReduction2 = formObject.select("#riskReduction2").node().value;
+          d.riskReduction3 = formObject.select("#riskReduction3").node().value;
+          d.riskReduction4 = formObject.select("#riskReduction4").node().value;
+
           nodes.forEach(function(d_node) {
             d_node.computed_proba = computeProbability(d_node);
           })
                         
           d3.selectAll("path.link")
              .style("stroke-width",function(d) {return d.target.computed_proba*20;});
-          console.log(nodes)
           d3.select("foreignObject").remove();
         });
       

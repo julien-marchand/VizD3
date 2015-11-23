@@ -38,7 +38,7 @@ var jsonCause = {
                       {
                           "name": "Manipulation personnel/ Sous-traitant",
                           "description": "Proba : 0.5 ",
-                          "proba": 0.5
+                          "proba": 1
                       }
                   ]
               },
@@ -109,7 +109,7 @@ var tree = d3.layout.tree()
 var diagonal = d3.svg.diagonal()
   .projection(function(d) { return [d.y, d.x]; });
 
-var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
+var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", zoom);
 
 var svg = d3.select("#graph").append("svg:svg")
   .attr("width", w + m[1] + m[3])
@@ -191,7 +191,7 @@ function update(source, type, root) {
     .text(function(d) { return d.name; })
     .style('fill',  'black' )
     .style("fill-opacity", 1e-6)
-    .call(make_editable, nodes);
+    .call(make_editable, nodes, type);
 
   nodeEnter.select("polygon")
     .attr("points", function(d) { return d != root ? drawShapePoints("circle") : (type == "cause" ? drawShapePoints("semi-circle left") : drawShapePoints("semi-circle right"))})
@@ -206,9 +206,9 @@ function update(source, type, root) {
 
   nodeUpdate.select("polygon")
     .attr("points", function(d) { return d != root ? drawShapePoints("circle") : (type == "cause" ? drawShapePoints("semi-circle left") : drawShapePoints("semi-circle right"))})
-    .attr("stroke", "lightsteelblue")
+    .attr("stroke", "rgb(255, 230, 0)")
     .attr("stroke-width", 2 )
-    .style("fill", function(d) { return d._children ? "lightsteelblue" : "white"; })
+    .style("fill", function(d) { return d._children ? "rgb(255, 230, 0)" : "white"; })
     .style("fill-opacity",1 );
 
   nodeUpdate.select("text")
@@ -241,7 +241,7 @@ function update(source, type, root) {
       return diagonal({source: o, target: o});
     })
     .style("stroke-width",function(d) {return d.target.computed_proba*20;})
-    .call(make_editable_path, nodes)
+    .call(make_editable_path, nodes, type)
     .transition()
     .duration(duration)
     .attr("d", diagonal);
@@ -286,20 +286,26 @@ function computeProbability(d) {
     d.computed_proba = d.proba;
   else if(d.children || d._children) {
     var allChildren = d.children ? d.children : d._children
-    var proba = 1;
+    var probab = 1;
     if(d.op == "AND") {
       for(var i = 0; i < allChildren.length; i++) {
-        proba *= computeProbability(allChildren[i])
+        probab *= computeProbability(allChildren[i])
       }
     } else if (d.op == "OR") {
-      for(var i = 0; i <  allChildren.length; i++) {
-        proba *= 1 - computeProbability(allChildren[i])
+      for(var i = 0; i < allChildren.length; i++) {
+        probab *= 1 - computeProbability(allChildren[i])
       }
-      proba = 1 - proba
+      probab = 1 - probab;
     }
-    d.computed_proba = proba;
+    d.computed_proba = probab;
   } else
     d.computed_proba = 1;
+  
+  if(d.riskReduction1) d.computed_proba = d.computed_proba * (1 - d.riskReduction1)
+  if(d.riskReduction2) d.computed_proba = d.computed_proba * (1 - d.riskReduction2)
+  if(d.riskReduction3) d.computed_proba = d.computed_proba * (1 - d.riskReduction3)
+  if(d.riskReduction4) d.computed_proba = d.computed_proba * (1 - d.riskReduction4)
+  console.log(d);
   return d.computed_proba
 }
 
@@ -348,7 +354,8 @@ function toggle(d) {
 }
 
 function zoom() {
-  vis.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+  if(!d3.select("foreignObject").node())
+    vis.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
 }
 
 function drawShapePoints(type) {
@@ -370,4 +377,8 @@ function nvl(value1, value2) {
   if (value1 == null)
     return value2;
   return value1;
+}
+
+function trtd(a, b) {
+  return "<tr><td>" + a + "</td><td>" + b + "</td></tr>";
 }
