@@ -1,0 +1,76 @@
+{
+  "name": "Contamination Produit",
+  "children": [
+      {
+          "name": "Produit Contaminé",
+          "description": "Proba : 0.6",
+          "op": "OR",
+          "children": [
+              {
+                  "name": "Matières première",
+                  "description": "Proba : 0.8",
+                  "op": "AND",
+                  "children": [
+                      {
+                          "name": "Manipulation personnel/ Sous-traitant",
+                          "description": "Proba : 0.5 ",
+                          "proba": 1
+                      }
+                  ]
+              },
+              {
+                  "name": "Stockage/transport",
+                  "description": "Proba : 0.8",
+                  "op": "OR",
+                  "children": [
+                      {
+                          "name": "Non respect de la procédure de la production",
+                          "description": "Proba : 0.8",
+                          "proba": 0.6
+                      },
+                      {
+                          "name": "Contamination sur le site/stockage",
+                          "description": "Proba : 0.8",
+                          "proba": 0.4
+                      }
+                  ]
+              },
+              {
+                  "name": "Production",
+                  "description": "Proba : 0.8",
+                  "op": "AND",
+                  "children": [
+                      {
+                          "name": "Défaillance système de production",
+                          "description": "Proba : 0.8",
+                          "proba": 0.9
+                      },
+                      {
+                          "name": "Contamination emballages",
+                          "description": "Proba : 0.8",
+                          "proba": 0.5
+                      }
+                  ]
+              }
+          ]
+      },
+      {
+          "name": "Défaillance du Contrôle",
+          "description": "proba : 0.7",
+          "op": "OR",
+          "children": [
+              {
+                  "name": "Non respectde la procédure de production",
+                  "description": "proba : 0.7",
+                  "proba": 0.24
+              },
+              {
+                  "name": "Défaillance contrôle réception client",
+                  "description": "proba : 0.7",
+                  "proba": 0.16
+              }
+          ]
+      }
+  ]
+}
+

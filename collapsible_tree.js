@@ -1,103 +1,3 @@
-var jsonConsequence = {
-  "name": "",
-  "children": [
-      {
-          "name": "Consequence 1",
-          "proba": 0.2,
-          "children": [
-              {
-                  "name": "Sur-consequence 1",
-                  "proba": 0.5
-              },
-              {
-                  "name": "Sur-consequence 2",
-                  "proba": 0.5
-              }
-          ]
-      },
-      {
-          "name": "Consequence 2",
-          "proba": 0.8
-      }
-  ]
-}
-
-var jsonCause = {
-  "name": "Contamination Produit",
-  "children": [
-      {
-          "name": "Produit Contaminé",
-          "description": "Proba : 0.6",
-          "op": "OR",
-          "children": [
-              {
-                  "name": "Matières première",
-                  "description": "Proba : 0.8",
-                  "op": "AND",
-                  "children": [
-                      {
-                          "name": "Manipulation personnel/ Sous-traitant",
-                          "description": "Proba : 0.5 ",
-                          "proba": 1
-                      }
-                  ]
-              },
-              {
-                  "name": "Stockage/transport",
-                  "description": "Proba : 0.8",
-                  "op": "OR",
-                  "children": [
-                      {
-                          "name": "Non respect de la procédure de la production",
-                          "description": "Proba : 0.8",
-                          "proba": 0.6
-                      },
-                      {
-                          "name": "Contamination sur le site/stockage",
-                          "description": "Proba : 0.8",
-                          "proba": 0.4
-                      }
-                  ]
-              },
-              {
-                  "name": "Production",
-                  "description": "Proba : 0.8",
-                  "op": "AND",
-                  "children": [
-                      {
-                          "name": "Défaillance système de production",
-                          "description": "Proba : 0.8",
-                          "proba": 0.9
-                      },
-                      {
-                          "name": "Contamination emballages",
-                          "description": "Proba : 0.8",
-                          "proba": 0.5
-                      }
-                  ]
-              }
-          ]
-      },
-      {
-          "name": "Défaillance du Contrôle",
-          "description": "proba : 0.7",
-          "op": "OR",
-          "children": [
-              {
-                  "name": "Non respectde la procédure de production",
-                  "description": "proba : 0.7",
-                  "proba": 0.24
-              },
-              {
-                  "name": "Défaillance contrôle réception client",
-                  "description": "proba : 0.7",
-                  "proba": 0.16
-              }
-          ]
-      }
-  ]
-};
-
 var w = window.screen.availWidth,
 h = window.screen.availHeight,
 i = 0;
@@ -117,19 +17,19 @@ var svg = d3.select("#graph").append("svg:svg")
   
 var vis = svg.append("svg:g")
 
-// d3.json(json, function(json) {
-root = jsonCause;
-root.x0 = h / 2;
-root.y0 = w / 2;
-update(root, type = "cause", root);
+d3.json("jsonCause.json", function(json) {
+  root = json;
+  root.x0 = h / 2;
+  root.y0 = w / 2;
+  update(root, type = "cause", root);
+});
 
-
-root2 = jsonConsequence;
-root2.x0 = h / 2;
-root2.y0 = w / 2;
-update(root2, type = "consequence", root2);
-
-// });
+d3.json("jsonConsequence.json", function(json) {
+  root2 = json;
+  root2.x0 = h / 2;
+  root2.y0 = w / 2;
+  update(root2, type = "consequence", root2);
+});
 
 var tooltip = d3.select("body").append("div")
   .attr("class", "tooltip")
