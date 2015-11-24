@@ -1,25 +1,32 @@
 function make_editable(d, nodes, type) {
   this.on("click", function(d) {
+      svg.on(".zoom", null);
+    
       d3.selectAll("foreignObject").remove()
       
-      var el = d3.select(this);
-      var p = d3.select(this.parentNode);
+      var el = d3.select(this),
+        p = d3.select(this.parentNode.parentNode);
+      var h = 214, w = 358;
       
       var inp = p.append("foreignObject")
-          .attr("x", -120)
-          .attr("y", -60)
-          .attr("width", 300)
+          .attr("x", -w/2)
+          .attr("y", -h/2)
+          .attr("transform", d3.select(this.parentNode).attr("transform"))
+          .attr("width", w)
+          .attr("height", h)
+          .attr("z-index", 9999)
           .append("xhtml:form");
           
       if(type == "cause")
         inp.html('<table style="padding:5px;z-index:2;background:rgb(255, 230, 0);">'
                   + trtd('Name', '<input id="iName" type="text" value="' + d.name + '">')
                   + trtd('Description', '<input id="iDescription" type="text" value="' + nvl(d.description, "")+ '">')
+                  + trtd('Proba', '<input id="iProba" placeholder="auto: ' + Math.round(d.computed_proba*10000)/100 + '%" type="number" value="' + nvl(d.proba, "")+ '">')
                   + ((d.children || d._children) ? trtd('Risk interaction', '<input id="opAnd" type="radio" name="op" value="AND" ' + (d.op == "AND" ? "checked" : "") + '><label for="opAnd">AND</label><input id="opOr" type="radio" name="op" value="OR" ' + (d.op == "OR" ? "checked" : "") + '><label for="opOr">OR</label>') : '')
-                  + trtd('<input id="riskReductionName1" value="' + nvl(d.riskReductionName1, "Risk reduction 1") + '" type="text">', '<input id="riskReduction1" value="' + d.riskReduction1 + '" type="number">')
-                  + trtd('<input id="riskReductionName2" value="' + nvl(d.riskReductionName2, "Risk reduction 2") + '" type="text">', '<input id="riskReduction2" value="' + d.riskReduction2 + '" type="number">')
-                  + trtd('<input id="riskReductionName3" value="' + nvl(d.riskReductionName3, "Risk reduction 3") + '" type="text">', '<input id="riskReduction3" value="' + d.riskReduction3 + '" type="number">')
-                  + trtd('<input id="riskReductionName4" value="' + nvl(d.riskReductionName4, "Risk reduction 4") + '" type="text">', '<input id="riskReduction4" value="' + d.riskReduction4 + '" type="number">')
+                  + trtd('<input id="riskReductionName1" placeholder="Reduction risk measure" value="' + nvl(d.riskReductionName1, "") + '" type="text">', '<input id="riskReduction1" placeholder="Impact (e.g. 0.2)" value="' + d.riskReduction1 + '" type="number">')
+                  + trtd('<input id="riskReductionName2" placeholder="Reduction risk measure" value="' + nvl(d.riskReductionName2, "") + '" type="text">', '<input id="riskReduction2" placeholder="Impact (e.g. 0.2)" value="' + d.riskReduction2 + '" type="number">')
+                  + trtd('<input id="riskReductionName3" placeholder="Reduction risk measure" value="' + nvl(d.riskReductionName3, "") + '" type="text">', '<input id="riskReduction3" placeholder="Impact (e.g. 0.2)" value="' + d.riskReduction3 + '" type="number">')
+                  + trtd('<input id="riskReductionName4" placeholder="Reduction risk measure" value="' + nvl(d.riskReductionName4, "") + '" type="text">', '<input id="riskReduction4" placeholder="Impact (e.g. 0.2)" value="' + d.riskReduction4 + '" type="number">')
                   + '<tr><td style="text-align: center"><button id="saveButton" class="btn" type="button">Save</button></td><td style="text-align: center"><button id="cancelButton" class="btn" type="button">Cancel</button></td></tr>'
                   + '</table>');
       else {
@@ -31,7 +38,10 @@ function make_editable(d, nodes, type) {
       }
                   
       d3.select(cancelButton)
-        .on("click", function() {d3.select("foreignObject").remove()});
+        .on("click", function() {
+          d3.select("foreignObject").remove();
+          svg.call(zoomListener);
+        });
         
       d3.select(saveButton)
         .on("click", function() {
@@ -40,7 +50,14 @@ function make_editable(d, nodes, type) {
             d.name = newName;
           el.text(function(d) { return d.name; });
           d.description = formObject.select("#iDescription").node().value;
-          d.op = formObject.select("#opAnd").node().checked ? "AND" : "OR";
+          
+          proba = formObject.select("#iProba").node().value
+          d.proba = (proba && proba != "" ? proba : undefined);
+          if (d.children || d._children) d.op = formObject.select("#opAnd").node().checked ? "AND" : "OR";
+          d.riskReductionName1 = formObject.select("#riskReductionName1").node().value;
+          d.riskReductionName2 = formObject.select("#riskReductionName2").node().value;
+          d.riskReductionName3 = formObject.select("#riskReductionName3").node().value;
+          d.riskReductionName4 = formObject.select("#riskReductionName4").node().value;
           d.riskReduction1 = formObject.select("#riskReduction1").node().value;
           d.riskReduction2 = formObject.select("#riskReduction2").node().value;
           d.riskReduction3 = formObject.select("#riskReduction3").node().value;
@@ -53,6 +70,7 @@ function make_editable(d, nodes, type) {
           d3.selectAll("path.link")
              .style("stroke-width",function(d) {return d.target.computed_proba*20;});
           d3.select("foreignObject").remove();
+          svg.call(zoomListener);
         });
       
       

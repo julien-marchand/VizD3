@@ -98,9 +98,8 @@ var jsonCause = {
   ]
 };
 
-var m = [20, 120, 20, 20],
-w = window.screen.availWidth - m[1] - m[3],
-h = window.screen.availHeight - m[0] - m[2],
+var w = window.screen.availWidth,
+h = window.screen.availHeight,
 i = 0;
 
 var tree = d3.layout.tree()
@@ -112,8 +111,8 @@ var diagonal = d3.svg.diagonal()
 var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 10]).on("zoom", zoom);
 
 var svg = d3.select("#graph").append("svg:svg")
-  .attr("width", w + m[1] + m[3])
-  .attr("height", h + m[0] + m[2])
+  .attr("width", w)
+  .attr("height", h)
   .call(zoomListener);
   
 var vis = svg.append("svg:g")
@@ -185,7 +184,7 @@ function update(source, type, root) {
 
   nodeEnter.append("svg:text")
     .attr("x", function(d) { return (d.children || d._children) ? 0 : 12 * (type == "cause" ? -1 : 1); })
-    .attr("y", function(d) { return 16 * (d.children || d._children ? 1 : 0); })
+    .attr("y", function(d) { return 24 * (d.children || d._children ? 1 : 0); })
     .attr("dy", ".35em")
     .attr("text-anchor", function(d) { return (d.children || d._children) ? "middle" : (type == "cause" ? "end" : "start"); })
     .text(function(d) { return d.name; })
@@ -241,14 +240,14 @@ function update(source, type, root) {
       return diagonal({source: o, target: o});
     })
     .style("stroke-width",function(d) {return d.target.computed_proba*20;})
-    .call(make_editable_path, nodes, type)
+    //.call(make_editable_path, nodes, type)
     .transition()
     .duration(duration)
     .attr("d", diagonal);
     
   link.on("mouseover", function(d) {
     tooltip.transition()
-      .duration(200)
+      .duration(100)
       .style("opacity", .9);
     tooltip.html("Risk: " + Math.round(d.target.computed_proba*10000)/100 + " %")
       .style("left", (d3.event.pageX ) + "px")
@@ -256,7 +255,7 @@ function update(source, type, root) {
   })
   .on("mouseout", function(d) {
     tooltip.transition()
-      .duration(500)
+      .duration(100)
       .style("opacity", 0);
   });
 
@@ -305,7 +304,6 @@ function computeProbability(d) {
   if(d.riskReduction2) d.computed_proba = d.computed_proba * (1 - d.riskReduction2)
   if(d.riskReduction3) d.computed_proba = d.computed_proba * (1 - d.riskReduction3)
   if(d.riskReduction4) d.computed_proba = d.computed_proba * (1 - d.riskReduction4)
-  console.log(d);
   return d.computed_proba
 }
 
@@ -354,8 +352,7 @@ function toggle(d) {
 }
 
 function zoom() {
-  if(!d3.select("foreignObject").node())
-    vis.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+  vis.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
 }
 
 function drawShapePoints(type) {
